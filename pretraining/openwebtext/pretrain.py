@@ -1,6 +1,8 @@
 import os
 import sys
 
+from transformers import AlbertConfig
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 parent_dir_path = os.path.abspath(os.path.join(dir_path, os.pardir))
 sys.path.insert(0, parent_dir_path)
@@ -44,7 +46,7 @@ class Args:
     distributed_world_size: arg.Int = 4
 
     model_generator: arg.Str = 'pretraining/openwebtext/small_generator.json'
-    model_discriminator: arg.Str = 'pretraining/openwebtext/small_discriminator.json'
+    model_discriminator: arg.Str = 'alectra/discriminator_albert_configuration.json'
     model_mask_prob: arg.Float = 0.15
 
     opt_lr: arg.Float = 5e-4
@@ -144,7 +146,7 @@ def train(rank, args):
     from transformers import AutoConfig, ElectraForMaskedLM, ElectraForPreTraining
 
     generator = ElectraForMaskedLM(AutoConfig.from_pretrained(args.model_generator))
-    discriminator = AdaptedDiscriminator()
+    discriminator = AdaptedDiscriminator(AlbertConfig.from_pretrained(args.model_discriminator))
 
     tie_weights(generator, discriminator)
 
