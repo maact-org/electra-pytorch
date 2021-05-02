@@ -38,7 +38,7 @@ class Args:
     gpu_deterministic: arg.Bool = False
     gpu_mixed_precision: arg.Bool = False
     distributed_port: arg.Int = 8888
-    distributed_enabled: arg.Bool = True
+    distributed_enabled: arg.Bool = False
     distributed_world_size: arg.Int = 4
 
     model_generator: arg.Str = 'pretraining/openwebtext/small_generator.json'
@@ -46,7 +46,7 @@ class Args:
     model_mask_prob: arg.Float = 0.15
 
     opt_lr: arg.Float = 5e-4
-    opt_batch_size: arg.Int = 128 // (distributed_world_size if distributed_enabled else 1)
+    opt_batch_size: arg.Int = 4 // (distributed_world_size if distributed_enabled else 1)
     opt_warmup_steps: arg.Int = 10_000
     opt_num_training_steps: arg.Int = 200_000
 
