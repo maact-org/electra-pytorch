@@ -18,8 +18,10 @@ from torch.utils.data.dataloader import DataLoader
 
 from electra_pytorch import Electra
 
-from openwebtext import arg
-from openwebtext.dataset import load_owt, new_tokenizer, wrap_example_builder
+from pretraining.openwebtext import arg
+from pretraining.openwebtext.dataset import load_owt, new_tokenizer, wrap_example_builder
+
+from alectra import AdaptedDiscriminator
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +144,7 @@ def train(rank, args):
     from transformers import AutoConfig, ElectraForMaskedLM, ElectraForPreTraining
 
     generator = ElectraForMaskedLM(AutoConfig.from_pretrained(args.model_generator))
-    discriminator = ElectraForPreTraining(AutoConfig.from_pretrained(args.model_discriminator))
+    discriminator = AdaptedDiscriminator()
 
     tie_weights(generator, discriminator)
 
