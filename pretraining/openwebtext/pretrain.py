@@ -32,8 +32,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class Args:
-    data_dir: arg.Str = 'data/openwebtext_features'
-    data_vocab_file: arg.Str = 'data/vocab.txt'
+    data_dir: arg.Str = 'data_pt/wiki_pt_l_feature'
+    data_vocab_file: arg.Str = 'data_pt/Tokenizer.model'
     data_n_tensors_per_file: arg.Int = 2048
     data_max_seq_length: arg.Int = 128
 
@@ -97,13 +97,13 @@ def train(rank, args):
     ## dataset
 
     tokenizer = new_tokenizer(vocab_file=args.data_vocab_file)
-    vocab_size = len(tokenizer.vocab)
-    ds_train = wrap_example_builder(dataset=load_owt(owt_dir=args.data_dir, n_tensors_per_file=args.data_n_tensors_per_file), vocab=tokenizer.vocab, max_length=args.data_max_seq_length)
+    vocab_size = len(tokenizer.get_vocab())
+    ds_train = wrap_example_builder(dataset=load_owt(owt_dir=args.data_dir, n_tensors_per_file=args.data_n_tensors_per_file), vocab=tokenizer.get_vocab(), max_length=args.data_max_seq_length)
 
-    pad_token_id = tokenizer.vocab['[PAD]']
-    mask_token_id = tokenizer.vocab['[MASK]']
-    cls_token_id = tokenizer.vocab['[CLS]']
-    sep_token_id = tokenizer.vocab['[SEP]']
+    pad_token_id = tokenizer.pad_token_id
+    mask_token_id = tokenizer.mask_token_id
+    cls_token_id = tokenizer.cls_token_id
+    sep_token_id = tokenizer.sep_token_id
 
 
     def collate_batch(examples):
@@ -153,7 +153,7 @@ def train(rank, args):
         mask_token_id = mask_token_id,
         pad_token_id = pad_token_id,
         mask_prob = args.model_mask_prob,
-        mask_ignore_token_ids = [tokenizer.vocab['[CLS]'], tokenizer.vocab['[SEP]']],
+        mask_ignore_token_ids = [cls_token_id, sep_token_id],
         random_token_prob = 0.0).to(device))
 
 
@@ -193,7 +193,6 @@ def train(rank, args):
 
     for step in range(args.opt_num_training_steps+1):
         input_ids, input_mask, segment_ids = next(ds_train_loader)
-
         input_ids = input_ids.to(device)
         input_mask = input_mask.to(device)
         segment_ids = segment_ids.to(device)

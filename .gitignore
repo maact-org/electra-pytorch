@@ -134,4 +134,5 @@ output
 
 .idea/
 /data_pt/vocab.txt
+data_pt/
 /tmp/

@@ -10,8 +10,7 @@ import numpy as np
 
 import torch
 import torch.utils.data
-
-from openwebtext import tokenization
+from transformers import AlbertTokenizer
 
 
 class ExampleBuilder:
@@ -148,16 +147,12 @@ def cycle(iterable):
 
 
 def new_tokenizer(vocab_file, do_lower_case=True):
-    return tokenization.FullTokenizer(vocab_file=vocab_file, do_lower_case=do_lower_case)
+    return AlbertTokenizer.from_pretrained(vocab_file)
 
 
 def parse_tokenizer(tokenizer, text):
     return tokenizer.convert_tokens_to_ids(tokenizer.tokenize(text))
-    
 
-def create_tokenizer(vocab_file, do_lower_case=True):
-    tokenizer = tokenization.FullTokenizer(vocab_file=vocab_file, do_lower_case=do_lower_case)
-    return partial(parse_tokenizer, tokenizer)
 
 
 def load_owt(owt_dir, n_tensors_per_file):

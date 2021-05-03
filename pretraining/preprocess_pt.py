@@ -14,9 +14,9 @@ import numpy as np
 
 import torch
 import torch.utils.data
+from transformers import AlbertTokenizer
 
 from pretraining.openwebtext import arg
-from pretraining.openwebtext import tokenization
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +25,8 @@ def parse_tokenizer(tokenizer, text):
     return tokenizer.convert_tokens_to_ids(tokenizer.tokenize(text))
 
 
-def create_tokenizer(vocab_file, do_lower_case=True):
-    tokenizer = tokenization.FullTokenizer(vocab_file=vocab_file, do_lower_case=do_lower_case)
+def create_tokenizer(vocab_file):
+    tokenizer = AlbertTokenizer.from_pretrained(vocab_file)
     return partial(parse_tokenizer, tokenizer)
 
 
@@ -113,7 +113,7 @@ def preprocess_owt_job(tokenizer, src_dir, trg_dir, job_archives, n_tensors_per_
 class Args:
     src_dir: arg.Str = 'data_pt/wiki_pt_l'
     trg_dir: arg.Str = 'data_pt/wiki_pt_l_feature'
-    vocab_file: arg.Str = 'data_pt/vocab.txt'
+    vocab_file: arg.Str = 'data_pt/Tokenizer.model'
     n_dataset_building_processes: arg.Int = 32
     n_tensors_per_file: arg.Int = 2048
     max_seq_length: arg.Int = 128
