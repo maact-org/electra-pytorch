@@ -50,12 +50,12 @@ class Args:
     model_mask_prob: arg.Float = 0.15
 
     opt_lr: arg.Float = 5e-4
-    opt_batch_size: arg.Int = 4 // (distributed_world_size if distributed_enabled else 1)
+    opt_batch_size: arg.Int = 8 // (distributed_world_size if distributed_enabled else 1)
     opt_warmup_steps: arg.Int = 10_000
     opt_num_training_steps: arg.Int = 200_000
 
     step_log: arg.Int = 10
-    step_ckpt: arg.Int = 10_000
+    step_ckpt: arg.Int = 1000
 
 
 ########################################################################################################
@@ -105,10 +105,6 @@ def train(rank, args):
     cls_token_id = tokenizer.vocab['[CLS]']
     sep_token_id = tokenizer.vocab['[SEP]']
 
-    assert pad_token_id == 0
-    assert cls_token_id == 101
-    assert sep_token_id == 102
-    assert mask_token_id == 103
 
     def collate_batch(examples):
         input_ids = torch.nn.utils.rnn.pad_sequence([example['input_ids'] for example in examples], batch_first=True, padding_value=pad_token_id)

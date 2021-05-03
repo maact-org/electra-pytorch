@@ -30,7 +30,7 @@ def create_tokenizer(vocab_file, do_lower_case=True):
     return partial(parse_tokenizer, tokenizer)
 
 
-def preprocess_owt(tokenizer, src_dir, tmp_dir, trg_dir, n_dataset_building_processes, n_tensors_per_file,
+def preprocess_owt(tokenizer, src_dir, trg_dir, n_dataset_building_processes, n_tensors_per_file,
                    max_seq_length=None):
     # Preamble
     logger.info(f'Writing features to {trg_dir}.')
@@ -39,7 +39,6 @@ def preprocess_owt(tokenizer, src_dir, tmp_dir, trg_dir, n_dataset_building_proc
     # Crunch files
     trg_dir = Path(trg_dir)
     src_dir = Path(src_dir)
-    tmp_dir = Path(tmp_dir)
     archives = os.listdir(src_dir)
     n_archives_per_job = math.ceil(len(archives) / n_dataset_building_processes)
     job_archives = [
@@ -51,11 +50,11 @@ def preprocess_owt(tokenizer, src_dir, tmp_dir, trg_dir, n_dataset_building_proc
     assert len(archives) > 0
 
     if n_dataset_building_processes == 1:
-        feature_set_paths = preprocess_owt_job(tokenizer, src_dir, tmp_dir, trg_dir, job_archives, n_tensors_per_file,
+        feature_set_paths = preprocess_owt_job(tokenizer, src_dir, trg_dir, job_archives, n_tensors_per_file,
                                                max_seq_length, job_id=0)
     else:
         pool = multiprocessing.Pool(processes=n_dataset_building_processes)
-        preprocess_owt_job_partial = partial(preprocess_owt_job, tokenizer, src_dir, tmp_dir, trg_dir, job_archives,
+        preprocess_owt_job_partial = partial(preprocess_owt_job, tokenizer, src_dir, trg_dir, job_archives,
                                              n_tensors_per_file, max_seq_length)
         feature_sets = pool.map(preprocess_owt_job_partial, range(n_dataset_building_processes))
         feature_set_paths = [file_path for feature_set in feature_sets for file_path in feature_set]
@@ -63,7 +62,7 @@ def preprocess_owt(tokenizer, src_dir, tmp_dir, trg_dir, n_dataset_building_proc
     return feature_set_paths
 
 
-def preprocess_owt_job(tokenizer, src_dir, tmp_dir, trg_dir, job_archives, n_tensors_per_file, max_seq_length,
+def preprocess_owt_job(tokenizer, src_dir, trg_dir, job_archives, n_tensors_per_file, max_seq_length,
                        job_id=0):
     '''
     OpenWebText is saved under the following format:
@@ -78,40 +77,28 @@ def preprocess_owt_job(tokenizer, src_dir, tmp_dir, trg_dir, job_archives, n_ten
         ...
     '''
 
-    # Preamble
-    os.makedirs(tmp_dir, exist_ok=True)
-
     # Process
     feature_index = 0
     feature_set_paths = []
     features = []
-    for archive_id, archive in enumerate(job_archives[job_id]):
-        if os.path.isdir(src_dir / archive):
-            logger.info(f'Ignoring rogue directory {src_dir / archive}.')
-            continue
+    print(f'jon {job_id} started')
+    for i,file in enumerate(job_archives[job_id]):
+        file_path = src_dir / file
 
-        logger.info(f'Job {job_id}: Processing {archive_id}/{len(job_archives[job_id])} {src_dir / archive}.')
+        with open(file_path, 'r') as f:
+            for line in f.readlines():
+                line = line.strip()
+                if len(line) > 2:
+                    encoding = tokenizer(line)
+                    features.append(torch.tensor(encoding))
+        print(f'file {i}-{job_id} tokenized')
 
-        with tarfile.open(src_dir / archive) as t:
-            extracted_archive = tmp_dir / f'{archive}-extracted'
-            t.extractall(extracted_archive)
-
-        for file in os.listdir(extracted_archive):
-            file_path = extracted_archive / file
-
-            with open(file_path, 'r') as f:
-                for line in f.readlines():
-                    line = line.strip()
-                    if len(line) > 2:
-                        encoding = tokenizer(line)
-                        features.append(torch.tensor(encoding))
-
-        while len(features) > n_tensors_per_file:
-            feature_set_path = trg_dir / f'feature_set_{job_id}_{feature_index}.pt'
-            torch.save(features[:n_tensors_per_file], feature_set_path)
-            features = features[n_tensors_per_file:]
-            feature_index += 1
-            feature_set_paths.append(feature_set_path)
+    while len(features) > n_tensors_per_file:
+        feature_set_path = trg_dir / f'feature_set_{job_id}_{feature_index}.pt'
+        torch.save(features[:n_tensors_per_file], feature_set_path)
+        features = features[n_tensors_per_file:]
+        feature_index += 1
+        feature_set_paths.append(feature_set_path)
 
     # Serialize
     if len(features) > 0:
@@ -124,10 +111,9 @@ def preprocess_owt_job(tokenizer, src_dir, tmp_dir, trg_dir, job_archives, n_ten
 
 @dataclass(frozen=True)
 class Args:
-    src_dir: arg.Str = 'data/openwebtext'
-    trg_dir: arg.Str = 'data/openwebtext_features'
-    tmp_dir: arg.Str = '/tmp/owt'
-    vocab_file: arg.Str = 'data/vocab.txt'
+    src_dir: arg.Str = 'data_pt/wiki_pt_l'
+    trg_dir: arg.Str = 'data_pt/wiki_pt_l_feature'
+    vocab_file: arg.Str = 'data_pt/vocab.txt'
     n_dataset_building_processes: arg.Int = 32
     n_tensors_per_file: arg.Int = 2048
     max_seq_length: arg.Int = 128
@@ -143,7 +129,7 @@ def main():
     )
 
     tokenizer = create_tokenizer(args.vocab_file)
-    preprocess_owt(tokenizer=tokenizer, src_dir=args.src_dir, tmp_dir=args.tmp_dir, trg_dir=args.trg_dir,
+    preprocess_owt(tokenizer=tokenizer, src_dir=args.src_dir, trg_dir=args.trg_dir,
                    n_dataset_building_processes=args.n_dataset_building_processes,
                    n_tensors_per_file=args.n_tensors_per_file, max_seq_length=args.max_seq_length)
 

@@ -133,3 +133,5 @@ data
 output
 
 .idea/
+/data_pt/vocab.txt
+/tmp/

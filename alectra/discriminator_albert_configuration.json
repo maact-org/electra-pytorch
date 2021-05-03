@@ -2,6 +2,6 @@
   "hidden_size":768,
   "num_attention_heads":12,
   "intermediate_size":3072,
-  "vocab_size":30522,
+  "vocab_size":31719,
   "max_position_embeddings":512
 }
