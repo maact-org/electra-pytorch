@@ -25,8 +25,8 @@ def parse_tokenizer(tokenizer, text):
     return tokenizer.convert_tokens_to_ids(tokenizer.tokenize(text))
 
 
-def create_tokenizer(vocab_file):
-    tokenizer = AlbertTokenizer.from_pretrained(vocab_file)
+def create_tokenizer(vocab_dir):
+    tokenizer = AlbertTokenizer.from_pretrained(vocab_dir)
     return partial(parse_tokenizer, tokenizer)
 
 
@@ -113,10 +113,10 @@ def preprocess_owt_job(tokenizer, src_dir, trg_dir, job_archives, n_tensors_per_
 class Args:
     src_dir: arg.Str = 'data_pt/wiki_pt_l'
     trg_dir: arg.Str = 'data_pt/wiki_pt_l_feature'
-    vocab_file: arg.Str = 'data_pt/Tokenizer.model'
+    vocab_dir: arg.Str = 'data_pt/tokenizer_pt'
     n_dataset_building_processes: arg.Int = 32
     n_tensors_per_file: arg.Int = 2048
-    max_seq_length: arg.Int = 128
+    max_seq_length: arg.Int = 512
 
 
 def main():
@@ -128,7 +128,7 @@ def main():
         level=logging.INFO
     )
 
-    tokenizer = create_tokenizer(args.vocab_file)
+    tokenizer = create_tokenizer(args.vocab_dir)
     preprocess_owt(tokenizer=tokenizer, src_dir=args.src_dir, trg_dir=args.trg_dir,
                    n_dataset_building_processes=args.n_dataset_building_processes,
                    n_tensors_per_file=args.n_tensors_per_file, max_seq_length=args.max_seq_length)
